@@ -169,6 +169,92 @@ ALPHA   CMPI.B      #$41,D6
         SUBI.B      #$37,D6
         RTS
 
+PREPADD MOVEA.L     A2,A1
+        JSR         GETVAL
+        MOVE.B      #$09,(A2)+
+        RTS
+
+PREBUFF MOVEA.L     A6,A2
+        BSR         PREPADD
+        JSR                
+        
+DECODE  MOVEM.L A4-A6/D0-D4/D6-D7,-(SP)      
+        JSR     clrRegs                         
+        MOVE.B  1,D5        
+        MOVE.W  (A0)+,D7           
+        MOVEA.L A2,A3                              
+        JSR     DEHELP             
+
+DEHELP  MOVE.W  D7,D5
+        MOVE.B  12,D4
+        LSR.W   D4,D5
+        MULU
+        
+        
+GETVAL  JSR         VAL1
+        MOVE.B      12,D4   
+        JSR         VAL2
+        MOVE.B      8,D4
+        JSR         VAL2
+        MOVE.B      4,D4
+        JSR         VAL2
+        MOVE.B      0,D4
+        JSR         VAL4
+        MOVE.B      12,D4
+        JSR         VAL4
+        MOVE.B      8,D4
+        JSR         VAL4
+        MOVE.B      4,D4
+        JSR         VAL4
+        MOVE.B      #0,D4
+        LSR.L       D4,D5
+        ANDI.L      #$0000000F,D6
+        JSR         HtoA
+
+VAL1    MOVEQ   #$0, D5
+        MOVE.L  A0,D5
+        SWAP    D5
+        RTS
+
+VAL2    LSR.L   D4,D5
+        ANDI.L  #$0000000F,D6
+        JSR     HtoA
+        JSR     VAL1
+        RTS
+
+VAL3    MOVEQ   #$0,D5
+        MOVE.L  A0,D5
+        RTS
+        
+VAL4    LSR.L   D4,D5
+        ANDI.L  #$0000000F,D6
+        JSR     HtoA
+        JSR     VAL3
+        RTS
+        
+        
+
+CLEAR   CLR         D0
+        CLR         D1
+        CLR         D2
+        CLR         D3
+        CLR         D4
+        CLR         D5
+        CLR         D6
+        CLR         D7
+        
+clearRegs
+        CLR.L   D0                  
+        CLR.L   D1
+        CLR.L   D2
+        CLR.L   D3
+        CLR.L   D4
+        CLR.L   D6
+        CLR.L   D7
+        RTS           
+     
+
+
 CR          EQU         $0D
 LF          EQU         $0A
 ERROR       DC.L    ' ERROR INVALID INPUT ',CR,0
