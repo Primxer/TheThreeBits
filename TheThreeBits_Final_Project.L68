@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/6/2020 12:57:39 PM
+Created On: 5/23/2020 3:39:16 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :
@@ -9,181 +9,561 @@ Created On: 5/6/2020 12:57:39 PM
 00000000                             5  * Description:
 00000000                             6  *-----------------------------------------------------------
 00001000                             7      ORG    $1000
-00001000                             8  START:  *Read starting memory location
-00001000  43F9 000011A0              9          LEA         Start1,A1
-00001006  103C 000E                 10          MOVE.B      #14,D0
-0000100A  4E4F                      11          TRAP        #15
-0000100C  7400                      12          MOVEQ.L     #0,D2
-0000100E  4EB9 0000106C             13          JSR         ReadW
-00001014  33C3 0000124C             14          MOVE.W      D3,StartMem
-0000101A  43F9 00001250             15          LEA         ENTER,A1
-00001020  103C 000E                 16          MOVE.B      #14,D0
-00001024  4E4F                      17          TRAP        #15
-00001026                            18          
-00001026                            19          *Read ending memory location
-00001026  43F9 000011F7             20          LEA         Start2,A1
-0000102C  103C 000E                 21          MOVE.B      #14,D0
-00001030  4E4F                      22          TRAP        #15
-00001032  7400                      23          MOVEQ.L     #0,D2
-00001034  4EB9 0000106C             24          JSR         ReadW
-0000103A  33C3 0000124E             25          MOVE.W      D3,EndMem
-00001040  43F9 00001250             26          LEA         ENTER,A1
-00001046  103C 000E                 27          MOVE.B      #14,D0
-0000104A  4E4F                      28          TRAP        #15
-0000104C                            29          
-0000104C                            30          *Param for Search loop
-0000104C  3639 0000124C             31          MOVE.W      StartMem,D3
-00001052                            32          
-00001052                            33  Search  *Loop through start and end memory locations. D3 param for starting location
-00001052  B679 0000124E             34          CMP.W       EndMem,D3
-00001058  6E00 000E                 35          BGT         End
-0000105C  3803                      36          MOVE.W      D3,D4
-0000105E  4EB9 000010C4             37          JSR         OutW
-00001064  5443                      38          ADDQ.W      #$0002,D3
-00001066                            39          *This is where our check/jumps for the machine code will need to happen
-00001066  60EA                      40          BRA         Search      
-00001068                            41          
-00001068                            42  End     *End of program 
-00001068  FFFF FFFF                 43          SIMHALT
-0000106C                            44          
-0000106C                            45  ReadW   *Reads word size hexa from keyboard input, bit shifting for byte size operations
-0000106C                            46          *param: D1 for trap tasks, D2 for calculations and final hexa
-0000106C                            47          *return: puts final hexa digit to D3
-0000106C                            48  
-0000106C                            49          *Read single character from input, convert to hex, bit shift left
-0000106C                            50          *3 bytes and add to D2
-0000106C  4EB9 00001126             51          JSR         RCHR
-00001072  1C01                      52          MOVE.B      D1,D6
-00001074  4EB9 0000112E             53          JSR         AtoH
-0000107A  2206                      54          MOVE.L      D6,D1
-0000107C  E989                      55          LSL.L       #4,D1
-0000107E  E989                      56          LSL.L       #4,D1
-00001080  E989                      57          LSL.L       #4,D1
-00001082  D481                      58          ADD.L       D1,D2
-00001084                            59  
-00001084                            60          *Read single character from input, convert to hex, bit shift left
-00001084                            61          *2 bytes and add to D2
-00001084  4EB9 00001126             62          JSR         RCHR
-0000108A  1C01                      63          MOVE.B      D1,D6
-0000108C  4EB9 0000112E             64          JSR         AtoH
-00001092  2206                      65          MOVE.L      D6,D1
-00001094  E989                      66          LSL.L       #4,D1
-00001096  E989                      67          LSL.L       #4,D1
-00001098  D481                      68          ADD.L       D1,D2
-0000109A                            69  
-0000109A                            70          *Read single character from input, convert to hex, bit shift left
-0000109A                            71          *1 byte and add to D2
-0000109A  4EB9 00001126             72          JSR         RCHR
-000010A0  1C01                      73          MOVE.B      D1,D6
-000010A2  4EB9 0000112E             74          JSR         AtoH
-000010A8  2206                      75          MOVE.L      D6,D1
-000010AA  E909                      76          LSL.B       #4,D1
-000010AC  D481                      77          ADD.L       D1,D2
-000010AE                            78  
-000010AE                            79          *Read single character from input, convert to hex, and add to D2
-000010AE  4EB9 00001126             80          JSR         RCHR
-000010B4  1C01                      81          MOVE.B      D1,D6
-000010B6  4EB9 0000112E             82          JSR         AtoH
-000010BC  2206                      83          MOVE.L      D6,D1
-000010BE  D441                      84          ADD         D1,D2
-000010C0  2602                      85          MOVE.L      D2,D3
-000010C2  4E75                      86          RTS
-000010C4                            87          
-000010C4                            88  OutW    *convert and output word size hexa from D4 to 
-000010C4                            89          *param: D4 to contain word size in hex for conversion, D5 used for calculations/bitshifting
-000010C4                            90          *output: outputs to terminal window ASCII conversion 
-000010C4                            91          
-000010C4                            92          *bit shift right 3 bytes to get first digit, place into $6000
-000010C4  3A04                      93          MOVE.W      D4,D5 
-000010C6  E845                      94          ASR.W       #4,D5
-000010C8  E845                      95          ASR.W       #4,D5
-000010CA  E845                      96          ASR.W       #4,D5
-000010CC  1C05                      97          MOVE.B      D5,D6
-000010CE  4EB9 00001144             98          JSR         HtoA
-000010D4  11C6 6000                 99          MOVE.B      D6,$6000
-000010D8                           100  
-000010D8                           101          *bit shift right 2 bytes and mask to get second digit, place into $6001
-000010D8  3A04                     102          MOVE.W      D4,D5
-000010DA  E845                     103          ASR.W       #4,D5
-000010DC  E845                     104          ASR.W       #4,D5
-000010DE  CA7C 000F                105          AND.W       #$000F,D5
-000010E2  1C05                     106          MOVE.B      D5,D6
-000010E4  4EB9 00001144            107          JSR         HtoA
-000010EA  11C6 6001                108          MOVE.B      D6,$6001
-000010EE                           109          
-000010EE                           110          *bit shift right 1 byte and mask to get third digit, place into $6002
-000010EE  3A04                     111          MOVE.W      D4,D5
-000010F0  E845                     112          ASR.W       #4,D5
-000010F2  CA7C 000F                113          AND.W       #$000F,D5
-000010F6  1C05                     114          MOVE.B      D5,D6
-000010F8  4EB9 00001144            115          JSR         HtoA
-000010FE  11C6 6002                116          MOVE.B      D6,$6002
-00001102                           117                
-00001102                           118          *mask to get 4th and final digit, place into $6003  
-00001102  3A04                     119          MOVE.W      D4,D5
-00001104  CA7C 000F                120          AND.W       #$000F,D5
-00001108  1C05                     121          MOVE.B      D5,D6
-0000110A  4EB9 00001144            122          JSR         HtoA
-00001110  11C6 6003                123          MOVE.B      D6,$6003
-00001114                           124          
-00001114                           125          *add null-terminator and call trap task #13 on $6000 terminated at $6004
-00001114  11FC 0000 6004           126          MOVE.B      #$00,$6004
-0000111A  327C 6000                127          MOVE.W      #$6000,A1
-0000111E  103C 000D                128          MOVE.B      #13,D0
-00001122  4E4F                     129          TRAP        #15
-00001124  4E75                     130          RTS
-00001126                           131          
-00001126                           132  *reads single character from user input & stores into D1.L 
-00001126  103C 0005                133  RCHR    MOVE.B      #5,D0
-0000112A  4E4F                     134          TRAP        #15
-0000112C  4E75                     135          RTS
-0000112E                           136    
-0000112E                           137    *ASCII to Hex for the numbers. Requires D6 as parameter (0-9)
-0000112E  1E3C 0000                138  AtoH    MOVE.B      #0,D7
-00001132  0C06 0030                139          CMPI.B      #$30,D6
-00001136  6D1E                     140          BLT.B       ERR
-00001138  BC3C 0039                141          CMP.B       #$39,D6
-0000113C  6E30                     142          BGT.B       ALPHA
-0000113E  0406 0030                143          SUBI.B      #$30,D6
-00001142  4E75                     144          RTS
-00001144                           145  
-00001144                           146  HtoA    *converts Hexa to ASCII 
-00001144  0C06 000A                147          CMPI.B      #$A,D6
-00001148  6C06                     148          BGE.B       REVALPHA
-0000114A  0606 0030                149          ADDI.B      #$30,D6 *if byte is number, add $30 to convert to respective ASCII
-0000114E  4E75                     150          RTS
-00001150                           151          
-00001150                           152  REVALPHA *if byte is letter, add $37 to convert to ASCII   
-00001150  0606 0037                153          ADDI.B      #$37,D6
-00001154  4E75                     154          RTS
-00001156                           155    
-00001156                           156  *error catch for inproper user input
-00001156  123C 0050                157  ERR     MOVE.B      #80,D1
-0000115A  103C 000D                158          MOVE.B      #13,D0
-0000115E  43F9 00001180            159          LEA       ERROR,A1
-00001164  4E4F                     160          TRAP        #15
-00001166  1E3C 0001                161          MOVE.B      #1,D7
-0000116A  6000 FE94                162          BRA         START 
-0000116E                           163    
-0000116E                           164  *ASCII to Hex for the letters. Requires D6 as parameter(A-F all capitals)
-0000116E  0C06 0041                165  ALPHA   CMPI.B      #$41,D6
-00001172  6DE2                     166          BLT.B       ERR
-00001174  0C06 0046                167          CMPI.B      #$46,D6
-00001178  6EDC                     168          BGT.B       ERR
-0000117A  0406 0037                169          SUBI.B      #$37,D6
-0000117E  4E75                     170          RTS
-00001180                           171  
-00001180  =0000000D                172  CR          EQU         $0D
-00001180  =0000000A                173  LF          EQU         $0A
-00001180= 20455252 4F522049 ...    174  ERROR       DC.L    ' ERROR INVALID INPUT ',CR,0
-000011A0= 45 6E 74 65 72 20 ...    175  Start1      DC.B    'Enter even starting memory location between',CR,LF,'(5000) and (5038) (Capital for letters): ',0
-000011F7= 45 6E 74 65 72 20 ...    176  Start2      DC.B    'Enter even ending memory location between',CR,LF,'(5000) and (5038) (Capital for letters): ',0
-0000124C                           177  StartMem    DS.W    1
-0000124E                           178  EndMem      DS.W    1
-00001250= 0D 0A 00                 179  ENTER       DC.B    CR,LF,0
-00001253                           180  
-00001253                           181  
-00001253                           182      END    START        ; last line of source
+00001000                             8  START:  *Read starting memory location from user
+00001000  4EB9 0000108C              9          JSR         test
+00001006  4E71                      10          NOP
+00001008  43F9 00001594             11          LEA         Start1,A1
+0000100E  103C 000E                 12          MOVE.B      #14,D0
+00001012  4E4F                      13          TRAP        #15
+00001014  7400                      14          MOVEQ.L     #0,D2
+00001016  4EB9 00001364             15          JSR         ReadL
+0000101C  23C3 00001618             16          MOVE.L      D3,StartMem
+00001022  43F9 00001624             17          LEA         ENTER,A1
+00001028  103C 000E                 18          MOVE.B      #14,D0
+0000102C  4E4F                      19          TRAP        #15
+0000102E                            20         
+0000102E                            21          *Read ending memory location from user
+0000102E  43F9 000015D7             22          LEA         Start2,A1
+00001034  103C 000E                 23          MOVE.B      #14,D0
+00001038  4E4F                      24          TRAP        #15
+0000103A  7400                      25          MOVEQ.L     #0,D2
+0000103C  4EB9 00001364             26          JSR         ReadL
+00001042  23C3 0000161C             27          MOVE.L      D3,EndMem
+00001048  43F9 00001624             28          LEA         ENTER,A1
+0000104E  103C 000E                 29          MOVE.B      #14,D0
+00001052  4E4F                      30          TRAP        #15
+00001054                            31          
+00001054                            32          *Param for Search loop
+00001054  23F9 00001618 00001620    33          MOVE.L      StartMem,CurrentAddr
+0000105E                            34          
+0000105E                            35  Search  *Loop through start and end memory locations. Counter param for starting location and counting
+0000105E  2639 00001620             36          MOVE.L      CurrentAddr,D3
+00001064  B6B9 0000161C             37          CMP.L       EndMem,D3
+0000106A  6E00 001C                 38          BGT         End
+0000106E  2839 00001620             39          MOVE.L      CurrentAddr,D4
+00001074  4EB9 00001430             40          JSR         OutL
+0000107A  4EB9 0000108E             41          JSR         JMPCHECK
+00001080  54B9 00001620             42          ADDQ.L      #$0002,CurrentAddr
+00001086  60D6                      43          BRA         Search      
+00001088                            44          
+00001088                            45  End     *End of program 
+00001088  FFFF FFFF                 46          SIMHALT
+0000108C                            47  test
+0000108C  4E75                      48          RTS 
+0000108E                            49          
+0000108E                            50  JMPCHECK
+0000108E  7600                      51          MOVE.L      #0,D3
+00001090  7400                      52          MOVE.L      #0,D2
+00001092  2279 00001620             53          MOVEA.L     CurrentAddr,A1
+00001098  1419                      54          MOVE.B      (A1)+,D2
+0000109A  E942                      55          ASL.W       #4,D2
+0000109C  E942                      56          ASL.W       #4,D2
+0000109E  1611                      57          MOVE.B      (A1),D3
+000010A0  D642                      58          ADD.W       D2,D3
+000010A2  2803                      59          MOVE.L      D3,D4
+000010A4  C67C F000                 60          AND.W       #$F000,D3
+000010A8  E883                      61          ASR.L       #4,D3
+000010AA  E883                      62          ASR.L       #4,D3
+000010AC  E883                      63          ASR.L       #4,D3
+000010AE  B63C 0005                 64          CMP.B       #$05,D3
+000010B2  6700 0220                 65          BEQ         addq
+000010B6  B63C 0007                 66          CMP.B       #$07,D3
+000010BA  6700 0232                 67          BEQ         moveql
+000010BE  B63C 0009                 68          CMP.B       #$09,D3
+000010C2  6700 0244                 69          BEQ         sub
+000010C6  B63C 0008                 70          CMP.B       #$08,D3
+000010CA  6700 0256                 71          BEQ         or
+000010CE  B63C 000D                 72          CMP.B       #$0D,D3
+000010D2  6700 01B8                 73          BEQ         addaadd
+000010D6  B63C 000E                 74          CMP.B       #$0E,D3
+000010DA  6700 0104                 75          BEQ         lsroas
+000010DE  B63C 0004                 76          CMP.B       #$04,D3
+000010E2  6700 002A                 77          BEQ         fourchecker
+000010E6  B63C 0001                 78          CMP.B       #$01,D3
+000010EA  6700 0006                 79          BEQ         moveb
+000010EE  6000 0266                 80          BRA         BADDATA
+000010F2                            81          
+000010F2                            82  moveb
+000010F2  43F9 00001677             83          LEA         PrintMOVEB,A1
+000010F8  103C 000E                 84          MOVE.B      #14,D0
+000010FC  4E4F                      85          TRAP        #15
+000010FE  3604                      86          MOVE.W      D4,D3
+00001100  43F9 00001624             87          LEA         ENTER,A1
+00001106  103C 000E                 88          MOVE.B      #14,D0
+0000110A  4E4F                      89          TRAP        #15
+0000110C  4E75                      90          RTS   
+0000110E                            91          
+0000110E                            92  fourchecker
+0000110E  3604                      93          MOVE.W      D4,D3
+00001110  C67C 0F00                 94          AND.W       #$0F00,D3
+00001114  B67C 0600                 95          CMP.W       #$0600,D3
+00001118  6700 008E                 96          BEQ         not
+0000111C  B67C 0800                 97          CMP.W       #$0800,D3
+00001120  6700 00A2                 98          BEQ         movem
+00001124  B67C 0E00                 99          CMP.W       #$0E00,D3
+00001128  6700 0006                100          BEQ         noprtsjsr
+0000112C  6000 020E                101          BRA         lea
+00001130                           102          
+00001130                           103  noprtsjsr
+00001130  3604                     104          MOVE.W      D4,D3
+00001132  C67C 00F0                105          AND.W       #$00F0,D3
+00001136  B67C 0070                106          CMP.W       #$0070,D3
+0000113A  6700 0006                107          BEQ         noprts
+0000113E  6000 0030                108          BRA         jsr
+00001142                           109          
+00001142                           110  noprts
+00001142  3604                     111          MOVE.W      D4,D3
+00001144  C67C 000F                112          AND.W       #$000F,D3
+00001148  B67C 0001                113          CMP.W       #$0001,D3
+0000114C  6700 0006                114          BEQ         nop
+00001150  6000 003A                115          BRA         rts
+00001154                           116  
+00001154                           117  nop
+00001154  43F9 0000166B            118          LEA         PrintNOP,A1
+0000115A  103C 000E                119          MOVE.B      #14,D0
+0000115E  4E4F                     120          TRAP        #15
+00001160  3604                     121          MOVE.W      D4,D3
+00001162  43F9 00001624            122          LEA         ENTER,A1
+00001168  103C 000E                123          MOVE.B      #14,D0
+0000116C  4E4F                     124          TRAP        #15
+0000116E  4E75                     125          RTS
+00001170                           126          
+00001170                           127  jsr
+00001170  43F9 00001673            128          LEA         PrintJSR,A1
+00001176  103C 000E                129          MOVE.B      #14,D0
+0000117A  4E4F                     130          TRAP        #15
+0000117C  3604                     131          MOVE.W      D4,D3
+0000117E  43F9 00001624            132          LEA         ENTER,A1
+00001184  103C 000E                133          MOVE.B      #14,D0
+00001188  4E4F                     134          TRAP        #15
+0000118A  4E75                     135          RTS
+0000118C                           136          
+0000118C                           137  rts
+0000118C  43F9 0000166F            138          LEA         PrintRTS,A1
+00001192  103C 000E                139          MOVE.B      #14,D0
+00001196  4E4F                     140          TRAP        #15
+00001198  3604                     141          MOVE.W      D4,D3
+0000119A  43F9 00001624            142          LEA         ENTER,A1
+000011A0  103C 000E                143          MOVE.B      #14,D0
+000011A4  4E4F                     144          TRAP        #15
+000011A6  4E75                     145          RTS
+000011A8                           146  
+000011A8                           147  not
+000011A8  43F9 00001661            148          LEA         PrintNOT,A1
+000011AE  103C 000E                149          MOVE.B      #14,D0
+000011B2  4E4F                     150          TRAP        #15
+000011B4  3604                     151          MOVE.W      D4,D3
+000011B6  43F9 00001624            152          LEA         ENTER,A1
+000011BC  103C 000E                153          MOVE.B      #14,D0
+000011C0  4E4F                     154          TRAP        #15
+000011C2  4E75                     155          RTS
+000011C4                           156          
+000011C4                           157  movem
+000011C4  43F9 00001665            158          LEA         PrintMOVEM,A1
+000011CA  103C 000E                159          MOVE.B      #14,D0
+000011CE  4E4F                     160          TRAP        #15
+000011D0  3604                     161          MOVE.W      D4,D3
+000011D2  43F9 00001624            162          LEA         ENTER,A1
+000011D8  103C 000E                163          MOVE.B      #14,D0
+000011DC  4E4F                     164          TRAP        #15
+000011DE  4E75                     165          RTS
+000011E0                           166          
+000011E0                           167  lsroas
+000011E0  3604                     168          MOVE.W      D4,D3
+000011E2  C67C 0018                169          AND.W       #%0000000000011000,D3
+000011E6  B67C 0008                170          CMP.W       #%0000000000001000,D3
+000011EA  6700 000E                171          BEQ         ls
+000011EE  B67C 0018                172          CMP.W       #%0000000000011000,D3
+000011F2  6700 0024                173          BEQ         ro
+000011F6  6000 003E                174          BRA         as
+000011FA                           175          
+000011FA                           176  ls
+000011FA  43F9 00001654            177          LEA         PrintLS,A1
+00001200  103C 000E                178          MOVE.B      #14,D0
+00001204  4E4F                     179          TRAP        #15
+00001206  3604                     180          MOVE.W      D4,D3
+00001208  C67C 0100                181          AND.W       #%0000000100000000,D3
+0000120C  B67C 0100                182          CMP.W       #%0000000100000000,D3
+00001210  6700 0042                183          BEQ         rightshift
+00001214  6000 005A                184          bra         leftshift
+00001218                           185          
+00001218                           186  ro
+00001218  43F9 00001657            187          LEA         PrintRO,A1
+0000121E  103C 000E                188          MOVE.B      #14,D0
+00001222  4E4F                     189          TRAP        #15
+00001224  3604                     190          MOVE.W      D4,D3
+00001226  C67C 0100                191          AND.W       #%0000000100000000,D3
+0000122A  B67C 0100                192          CMP.W       #%0000000100000000,D3
+0000122E  6700 0024                193          BEQ         rightshift
+00001232  6000 003C                194          bra         leftshift
+00001236                           195          
+00001236                           196  as
+00001236  43F9 0000165A            197          LEA         PrintAS,A1
+0000123C  103C 000E                198          MOVE.B      #14,D0
+00001240  4E4F                     199          TRAP        #15
+00001242  3604                     200          MOVE.W      D4,D3
+00001244  C67C 0100                201          AND.W       #%0000000100000000,D3
+00001248  B67C 0100                202          CMP.W       #%0000000100000000,D3
+0000124C  6700 0006                203          BEQ         rightshift
+00001250  6000 001E                204          bra         leftshift
+00001254                           205          
+00001254                           206  rightshift
+00001254  43F9 0000165D            207          LEA         PrintR,A1
+0000125A  103C 000E                208          MOVE.B      #14,D0
+0000125E  4E4F                     209          TRAP        #15
+00001260  3604                     210          MOVE.W      D4,D3
+00001262  43F9 00001624            211          LEA         ENTER,A1
+00001268  103C 000E                212          MOVE.B      #14,D0
+0000126C  4E4F                     213          TRAP        #15
+0000126E  4E75                     214          RTS
+00001270                           215          
+00001270                           216  leftshift
+00001270  43F9 0000165F            217          LEA         PrintL,A1
+00001276  103C 000E                218          MOVE.B      #14,D0
+0000127A  4E4F                     219          TRAP        #15
+0000127C  3604                     220          MOVE.W      D4,D3
+0000127E  43F9 00001624            221          LEA         ENTER,A1
+00001284  103C 000E                222          MOVE.B      #14,D0
+00001288  4E4F                     223          TRAP        #15
+0000128A  4E75                     224          RTS
+0000128C                           225          
+0000128C                           226  addaadd
+0000128C  3604                     227          MOVE.W      D4,D3
+0000128E  C67C 00C0                228          AND.W       #%0000000011000000,D3
+00001292  B67C 00C0                229          CMP.W       #%0000000011000000,D3
+00001296  6700 0006                230          BEQ         adda
+0000129A  6000 001E                231          BRA         add
+0000129E                           232          
+0000129E                           233  adda
+0000129E  43F9 0000164B            234          LEA         PrintADDA,A1
+000012A4  103C 000E                235          MOVE.B      #14,D0
+000012A8  4E4F                     236          TRAP        #15
+000012AA  3604                     237          MOVE.W      D4,D3
+000012AC  43F9 00001624            238          LEA         ENTER,A1
+000012B2  103C 000E                239          MOVE.B      #14,D0
+000012B6  4E4F                     240          TRAP        #15
+000012B8  4E75                     241          RTS
+000012BA                           242  add
+000012BA  43F9 00001650            243          LEA         PrintADD,A1
+000012C0  103C 000E                244          MOVE.B      #14,D0
+000012C4  4E4F                     245          TRAP        #15
+000012C6  43F9 00001624            246          LEA         ENTER,A1
+000012CC  103C 000E                247          MOVE.B      #14,D0
+000012D0  4E4F                     248          TRAP        #15
+000012D2  4E75                     249          RTS 
+000012D4                           250  addq
+000012D4  43F9 00001637            251          LEA         PrintADDQ,A1
+000012DA  103C 000E                252          MOVE.B      #14,D0
+000012DE  4E4F                     253          TRAP        #15
+000012E0  43F9 00001624            254          LEA         ENTER,A1
+000012E6  103C 000E                255          MOVE.B      #14,D0
+000012EA  4E4F                     256          TRAP        #15
+000012EC  4E75                     257          RTS
+000012EE                           258  
+000012EE                           259  moveql
+000012EE  43F9 0000163C            260          LEA         PrintMOVEQL,A1
+000012F4  103C 000E                261          MOVE.B      #14,D0
+000012F8  4E4F                     262          TRAP        #15
+000012FA  43F9 00001624            263          LEA         ENTER,A1
+00001300  103C 000E                264          MOVE.B      #14,D0
+00001304  4E4F                     265          TRAP        #15
+00001306  4E75                     266          RTS
+00001308                           267  sub
+00001308  43F9 00001644            268          LEA         PrintSUB,A1
+0000130E  103C 000E                269          MOVE.B      #14,D0
+00001312  4E4F                     270          TRAP        #15
+00001314  43F9 00001624            271          LEA         ENTER,A1
+0000131A  103C 000E                272          MOVE.B      #14,D0
+0000131E  4E4F                     273          TRAP        #15
+00001320  4E75                     274          RTS
+00001322                           275  or
+00001322  43F9 00001648            276          LEA         PrintOR,A1
+00001328  103C 000E                277          MOVE.B      #14,D0
+0000132C  4E4F                     278          TRAP        #15
+0000132E  43F9 00001624            279          LEA         ENTER,A1
+00001334  103C 000E                280          MOVE.B      #14,D0
+00001338  4E4F                     281          TRAP        #15
+0000133A  4E75                     282          RTS
+0000133C                           283  lea
+0000133C  43F9 00001633            284          LEA         PrintLEA,A1
+00001342  103C 000E                285          MOVE.B      #14,D0
+00001346  4E4F                     286          TRAP        #15
+00001348  43F9 00001624            287          LEA         ENTER,A1
+0000134E  103C 000E                288          MOVE.B      #14,D0
+00001352  4E4F                     289          TRAP        #15
+00001354  4E75                     290          RTS
+00001356                           291          
+00001356                           292  BADDATA
+00001356  43F9 00001624            293          LEA         ENTER,A1
+0000135C  103C 000E                294          MOVE.B      #14,D0
+00001360  4E4F                     295          TRAP        #15
+00001362  4E75                     296          RTS
+00001364                           297          
+00001364                           298  ReadL   *Reads word size hexa from keyboard input, bit shifting for byte size operations
+00001364                           299          *param: D1 for trap tasks, D2 for calculations and final hexa
+00001364                           300          *return: puts final hexa digit to D3
+00001364                           301  
+00001364                           302          *Read single character from input, convert to hex, bit shift left
+00001364                           303          *3 bytes and add to D2
+00001364  4EB9 0000151A            304          JSR         RCHR
+0000136A  1C01                     305          MOVE.B      D1,D6
+0000136C  4EB9 00001522            306          JSR         AtoH
+00001372  2206                     307          MOVE.L      D6,D1
+00001374  E989                     308          LSL.L       #4,D1
+00001376  E989                     309          LSL.L       #4,D1
+00001378  E989                     310          LSL.L       #4,D1
+0000137A  E989                     311          LSL.L       #4,D1
+0000137C  E989                     312          LSL.L       #4,D1
+0000137E  E989                     313          LSL.L       #4,D1
+00001380  E989                     314          LSL.L       #4,D1
+00001382  D481                     315          ADD.L       D1,D2
+00001384                           316          
+00001384                           317          *Read single character from input, convert to hex, bit shift left
+00001384                           318          *3 bytes and add to D2
+00001384  4EB9 0000151A            319          JSR         RCHR
+0000138A  1C01                     320          MOVE.B      D1,D6
+0000138C  4EB9 00001522            321          JSR         AtoH
+00001392  2206                     322          MOVE.L      D6,D1
+00001394  E989                     323          LSL.L       #4,D1
+00001396  E989                     324          LSL.L       #4,D1
+00001398  E989                     325          LSL.L       #4,D1
+0000139A  E989                     326          LSL.L       #4,D1
+0000139C  E989                     327          LSL.L       #4,D1
+0000139E  E989                     328          LSL.L       #4,D1
+000013A0  D481                     329          ADD.L       D1,D2
+000013A2                           330          
+000013A2                           331          *Read single character from input, convert to hex, bit shift left
+000013A2                           332          *3 bytes and add to D2
+000013A2  4EB9 0000151A            333          JSR         RCHR
+000013A8  1C01                     334          MOVE.B      D1,D6
+000013AA  4EB9 00001522            335          JSR         AtoH
+000013B0  2206                     336          MOVE.L      D6,D1
+000013B2  E989                     337          LSL.L       #4,D1
+000013B4  E989                     338          LSL.L       #4,D1
+000013B6  E989                     339          LSL.L       #4,D1
+000013B8  E989                     340          LSL.L       #4,D1
+000013BA  E989                     341          LSL.L       #4,D1
+000013BC  D481                     342          ADD.L       D1,D2
+000013BE                           343          
+000013BE                           344          *Read single character from input, convert to hex, bit shift left
+000013BE                           345          *3 bytes and add to D2
+000013BE  4EB9 0000151A            346          JSR         RCHR
+000013C4  1C01                     347          MOVE.B      D1,D6
+000013C6  4EB9 00001522            348          JSR         AtoH
+000013CC  2206                     349          MOVE.L      D6,D1
+000013CE  E989                     350          LSL.L       #4,D1
+000013D0  E989                     351          LSL.L       #4,D1
+000013D2  E989                     352          LSL.L       #4,D1
+000013D4  E989                     353          LSL.L       #4,D1
+000013D6  D481                     354          ADD.L       D1,D2
+000013D8                           355  
+000013D8                           356          *Read single character from input, convert to hex, bit shift left
+000013D8                           357          *3 bytes and add to D2
+000013D8  4EB9 0000151A            358          JSR         RCHR
+000013DE  1C01                     359          MOVE.B      D1,D6
+000013E0  4EB9 00001522            360          JSR         AtoH
+000013E6  2206                     361          MOVE.L      D6,D1
+000013E8  E989                     362          LSL.L       #4,D1
+000013EA  E989                     363          LSL.L       #4,D1
+000013EC  E989                     364          LSL.L       #4,D1
+000013EE  D481                     365          ADD.L       D1,D2
+000013F0                           366  
+000013F0                           367          *Read single character from input, convert to hex, bit shift left
+000013F0                           368          *2 bytes and add to D2
+000013F0  4EB9 0000151A            369          JSR         RCHR
+000013F6  1C01                     370          MOVE.B      D1,D6
+000013F8  4EB9 00001522            371          JSR         AtoH
+000013FE  2206                     372          MOVE.L      D6,D1
+00001400  E989                     373          LSL.L       #4,D1
+00001402  E989                     374          LSL.L       #4,D1
+00001404  D481                     375          ADD.L       D1,D2
+00001406                           376  
+00001406                           377          *Read single character from input, convert to hex, bit shift left
+00001406                           378          *1 byte and add to D2
+00001406  4EB9 0000151A            379          JSR         RCHR
+0000140C  1C01                     380          MOVE.B      D1,D6
+0000140E  4EB9 00001522            381          JSR         AtoH
+00001414  2206                     382          MOVE.L      D6,D1
+00001416  E909                     383          LSL.B       #4,D1
+00001418  D481                     384          ADD.L       D1,D2
+0000141A                           385  
+0000141A                           386          *Read single character from input, convert to hex, and add to D2
+0000141A  4EB9 0000151A            387          JSR         RCHR
+00001420  1C01                     388          MOVE.B      D1,D6
+00001422  4EB9 00001522            389          JSR         AtoH
+00001428  2206                     390          MOVE.L      D6,D1
+0000142A  D441                     391          ADD         D1,D2
+0000142C  2602                     392          MOVE.L      D2,D3
+0000142E  4E75                     393          RTS
+00001430                           394          
+00001430                           395  OutL    *convert and output word size hexa from D4 to null terminated string for trap task #13 at $6000 to $6004
+00001430                           396          *param: D4 to contain word size in hex for conversion, D5 used for calculations/bitshifting
+00001430                           397          *output: outputs to terminal window ASCII conversion 
+00001430                           398          
+00001430                           399          *bit shift right 3 bytes to get first digit, place into $6000
+00001430  2A04                     400          MOVE.L      D4,D5 
+00001432  E885                     401          ASR.L       #4,D5
+00001434  E885                     402          ASR.L       #4,D5
+00001436  E885                     403          ASR.L       #4,D5
+00001438  E885                     404          ASR.L       #4,D5
+0000143A  E885                     405          ASR.L       #4,D5
+0000143C  E885                     406          ASR.L       #4,D5
+0000143E  E885                     407          ASR.L       #4,D5
+00001440  1C05                     408          MOVE.B      D5,D6
+00001442  4EB9 00001538            409          JSR         HtoA
+00001448  11C6 6000                410          MOVE.B      D6,$6000
+0000144C                           411          
+0000144C                           412          *bit shift right 3 bytes to get first digit, place into $6000
+0000144C  2A04                     413          MOVE.L      D4,D5 
+0000144E  E885                     414          ASR.L       #4,D5
+00001450  E885                     415          ASR.L       #4,D5
+00001452  E885                     416          ASR.L       #4,D5
+00001454  E885                     417          ASR.L       #4,D5
+00001456  E885                     418          ASR.L       #4,D5
+00001458  E885                     419          ASR.L       #4,D5
+0000145A  CABC 0000000F            420          AND.L       #$0000000F,D5
+00001460  1C05                     421          MOVE.B      D5,D6
+00001462  4EB9 00001538            422          JSR         HtoA
+00001468  11C6 6001                423          MOVE.B      D6,$6001
+0000146C                           424          
+0000146C                           425          *bit shift right 3 bytes to get first digit, place into $6000
+0000146C  2A04                     426          MOVE.L      D4,D5 
+0000146E  E885                     427          ASR.L       #4,D5
+00001470  E885                     428          ASR.L       #4,D5
+00001472  E885                     429          ASR.L       #4,D5
+00001474  E885                     430          ASR.L       #4,D5
+00001476  E885                     431          ASR.L       #4,D5
+00001478  CABC 0000000F            432          AND.L       #$0000000F,D5
+0000147E  1C05                     433          MOVE.B      D5,D6
+00001480  4EB9 00001538            434          JSR         HtoA
+00001486  11C6 6002                435          MOVE.B      D6,$6002
+0000148A                           436          
+0000148A                           437          *bit shift right 3 bytes to get first digit, place into $6000
+0000148A  2A04                     438          MOVE.L      D4,D5 
+0000148C  E885                     439          ASR.L       #4,D5
+0000148E  E885                     440          ASR.L       #4,D5
+00001490  E885                     441          ASR.L       #4,D5
+00001492  E885                     442          ASR.L       #4,D5
+00001494  CABC 0000000F            443          AND.L       #$0000000F,D5
+0000149A  1C05                     444          MOVE.B      D5,D6
+0000149C  4EB9 00001538            445          JSR         HtoA
+000014A2  11C6 6003                446          MOVE.B      D6,$6003
+000014A6                           447  
+000014A6                           448          *bit shift right 2 bytes and mask to get second digit, place into $6001
+000014A6  2A04                     449          MOVE.L      D4,D5
+000014A8  E885                     450          ASR.L       #4,D5
+000014AA  E885                     451          ASR.L       #4,D5
+000014AC  E885                     452          ASR.L       #4,D5
+000014AE  CABC 0000000F            453          AND.L       #$000F,D5
+000014B4  1C05                     454          MOVE.B      D5,D6
+000014B6  4EB9 00001538            455          JSR         HtoA
+000014BC  11C6 6004                456          MOVE.B      D6,$6004
+000014C0                           457          
+000014C0                           458          *bit shift right 1 byte and mask to get third digit, place into $6002
+000014C0  2A04                     459          MOVE.L      D4,D5
+000014C2  E885                     460          ASR.L       #4,D5
+000014C4  E885                     461          ASR.L       #4,D5
+000014C6  CABC 0000000F            462          AND.L       #$000F,D5
+000014CC  1C05                     463          MOVE.B      D5,D6
+000014CE  4EB9 00001538            464          JSR         HtoA
+000014D4  11C6 6005                465          MOVE.B      D6,$6005
+000014D8                           466                
+000014D8                           467          *mask to get 4th and final digit, place into $6003  
+000014D8  2A04                     468          MOVE.L      D4,D5
+000014DA  E885                     469          ASR.L       #4,D5
+000014DC  CABC 0000000F            470          AND.L       #$000F,D5
+000014E2  1C05                     471          MOVE.B      D5,D6
+000014E4  4EB9 00001538            472          JSR         HtoA
+000014EA  11C6 6006                473          MOVE.B      D6,$6006
+000014EE                           474          
+000014EE                           475          *mask to get 4th and final digit, place into $6003  
+000014EE  2A04                     476          MOVE.L      D4,D5
+000014F0  CABC 0000000F            477          AND.L       #$000F,D5
+000014F6  1C05                     478          MOVE.B      D5,D6
+000014F8  4EB9 00001538            479          JSR         HtoA
+000014FE  11C6 6007                480          MOVE.B      D6,$6007
+00001502                           481          
+00001502                           482          *add null-terminator and call trap task #13 on $6000 terminated at $6004
+00001502  11FC 0020 6008           483          MOVE.B      #$20,$6008
+00001508  11FC 0000 6009           484          MOVE.B      #$00,$6009
+0000150E  327C 6000                485          MOVE.W      #$6000,A1
+00001512  103C 000E                486          MOVE.B      #14,D0
+00001516  4E4F                     487          TRAP        #15
+00001518  4E75                     488          RTS
+0000151A                           489          
+0000151A                           490  *reads single character from user input & stores into D1.L 
+0000151A  103C 0005                491  RCHR    MOVE.B      #5,D0
+0000151E  4E4F                     492          TRAP        #15
+00001520  4E75                     493          RTS
+00001522                           494    
+00001522                           495    *ASCII to Hex for the numbers. Requires D6 as parameter (0-9)
+00001522  1E3C 0000                496  AtoH    MOVE.B      #0,D7
+00001526  0C06 0030                497          CMPI.B      #$30,D6
+0000152A  6D1E                     498          BLT.B       ERR
+0000152C  BC3C 0039                499          CMP.B       #$39,D6
+00001530  6E30                     500          BGT.B       ALPHA
+00001532  0406 0030                501          SUBI.B      #$30,D6
+00001536  4E75                     502          RTS
+00001538                           503  
+00001538                           504  HtoA    *converts Hexa to ASCII 
+00001538  0C06 000A                505          CMPI.B      #$A,D6
+0000153C  6C06                     506          BGE.B       REVALPHA
+0000153E  0606 0030                507          ADDI.B      #$30,D6 *if byte is number, add $30 to convert to respective ASCII
+00001542  4E75                     508          RTS
+00001544                           509          
+00001544                           510  REVALPHA *if byte is letter, add $37 to convert to ASCII   
+00001544  0606 0037                511          ADDI.B      #$37,D6
+00001548  4E75                     512          RTS
+0000154A                           513    
+0000154A                           514  *error catch for inproper user input
+0000154A  123C 0050                515  ERR     MOVE.B      #80,D1
+0000154E  103C 000D                516          MOVE.B      #13,D0
+00001552  43F9 00001574            517          LEA         ERROR,A1
+00001558  4E4F                     518          TRAP        #15
+0000155A  1E3C 0001                519          MOVE.B      #1,D7
+0000155E  6000 FAA0                520          BRA         START 
+00001562                           521    
+00001562                           522  *ASCII to Hex for the letters. Requires D6 as parameter(A-F all capitals)
+00001562  0C06 0041                523  ALPHA   CMPI.B      #$41,D6
+00001566  6DE2                     524          BLT.B       ERR
+00001568  0C06 0046                525          CMPI.B      #$46,D6
+0000156C  6EDC                     526          BGT.B       ERR
+0000156E  0406 0037                527          SUBI.B      #$37,D6
+00001572  4E75                     528          RTS
+00001574                           529  
+00001574  =0000000D                530  CR              EQU         $0D
+00001574  =0000000A                531  LF              EQU         $0A
+00001574= 20455252 4F522049 ...    532  ERROR           DC.L    ' ERROR INVALID INPUT ',CR,0
+00001594= 45 6E 74 65 72 20 ...    533  Start1          DC.B    'Enter even Long starting memory location ',CR,LF,'(Capital for letters): ',0
+000015D7= 45 6E 74 65 72 20 ...    534  Start2          DC.B    'Enter even Long ending memory location ',CR,LF,'(Capital for letters): ',0
+00001618                           535  StartMem        DS.L    1
+0000161C                           536  EndMem          DS.L    1
+00001620                           537  CurrentAddr     DS.L    1
+00001624= 0D 0A 00                 538  ENTER           DC.B    CR,LF,0
+00001627= 2E 57 20 00              539  Print.W         DC.B    '.W ',0
+0000162B= 2E 42 20 00              540  Print.B         DC.B    '.B ',0
+0000162F= 2E 4C 20 00              541  Print.L         DC.B    '.L ',0
+00001633= 4C 45 41 00              542  PrintLEA        DC.B    'LEA',0
+00001637= 41 44 44 51 00           543  PrintADDQ       DC.B    'ADDQ',0
+0000163C= 4D 4F 56 45 51 2E ...    544  PrintMOVEQL     DC.B    'MOVEQ.L',0
+00001644= 53 55 42 00              545  PrintSUB        DC.B    'SUB',0
+00001648= 4F 52 00                 546  PrintOR         DC.B    'OR',0
+0000164B= 41 44 44 41 00           547  PrintADDA       DC.B    'ADDA',0
+00001650= 41 44 44 00              548  PrintADD        DC.B    'ADD',0
+00001654= 4C 53 00                 549  PrintLS         DC.B    'LS',0
+00001657= 52 4F 00                 550  PrintRO         DC.B    'RO',0
+0000165A= 41 53 00                 551  PrintAS         DC.B    'AS',0
+0000165D= 52 00                    552  PrintR          DC.B    'R',0
+0000165F= 4C 00                    553  PrintL          DC.B    'L',0
+00001661= 4E 4F 54 00              554  PrintNOT        DC.B    'NOT',0
+00001665= 4D 4F 56 45 4D 00        555  PrintMOVEM      DC.B    'MOVEM',0
+0000166B= 4E 4F 50 00              556  PrintNOP        DC.B    'NOP',0
+0000166F= 52 54 53 00              557  PrintRTS        DC.B    'RTS',0
+00001673= 4A 53 52 00              558  PrintJSR        DC.B    'JSR',0
+00001677= 4D 4F 56 45 2E 42 00     559  PrintMOVEB      DC.B    'MOVE.B',0
+0000167E                           560  
+0000167E                           561  
+0000167E                           562      END    START        ; last line of source
 
 No errors detected
 No warnings generated
@@ -192,22 +572,70 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-ALPHA               116E
-ATOH                112E
+ADD                 12BA
+ADDA                129E
+ADDAADD             128C
+ADDQ                12D4
+ALPHA               1562
+AS                  1236
+ATOH                1522
+BADDATA             1356
 CR                  D
-END                 1068
-ENDMEM              124E
-ENTER               1250
-ERR                 1156
-ERROR               1180
-HTOA                1144
+CURRENTADDR         1620
+END                 1088
+ENDMEM              161C
+ENTER               1624
+ERR                 154A
+ERROR               1574
+FOURCHECKER         110E
+HTOA                1538
+JMPCHECK            108E
+JSR                 1170
+LEA                 133C
+LEFTSHIFT           1270
 LF                  A
-OUTW                10C4
-RCHR                1126
-READW               106C
-REVALPHA            1150
-SEARCH              1052
+LS                  11FA
+LSROAS              11E0
+MOVEB               10F2
+MOVEM               11C4
+MOVEQL              12EE
+NOP                 1154
+NOPRTS              1142
+NOPRTSJSR           1130
+NOT                 11A8
+OR                  1322
+OUTL                1430
+PRINT.B             162B
+PRINT.L             162F
+PRINT.W             1627
+PRINTADD            1650
+PRINTADDA           164B
+PRINTADDQ           1637
+PRINTAS             165A
+PRINTJSR            1673
+PRINTL              165F
+PRINTLEA            1633
+PRINTLS             1654
+PRINTMOVEB          1677
+PRINTMOVEM          1665
+PRINTMOVEQL         163C
+PRINTNOP            166B
+PRINTNOT            1661
+PRINTOR             1648
+PRINTR              165D
+PRINTRO             1657
+PRINTRTS            166F
+PRINTSUB            1644
+RCHR                151A
+READL               1364
+REVALPHA            1544
+RIGHTSHIFT          1254
+RO                  1218
+RTS                 118C
+SEARCH              105E
 START               1000
-START1              11A0
-START2              11F7
-STARTMEM            124C
+START1              1594
+START2              15D7
+STARTMEM            1618
+SUB                 1308
+TEST                108C
