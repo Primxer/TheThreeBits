@@ -4,10 +4,18 @@
 * Date       :
 * Description:
 *-----------------------------------------------------------
-    ORG    $1000
+    ORG    $1000 
+        
 START:  *Read starting memory location from user
-        JSR         test
-        NOP
+        SUB.B       D0,D0
+        SUB.W       D0,D0
+        SUB.L       D0,D0
+        OR.B       D0,D0
+        OR.W       D0,D0
+        OR.L       D0,D0
+        ADDQ.B       #1,D0
+        ADDQ.W       #1,D0
+        ADDQ.L       #1,D0
         LEA         Start1,A1
         MOVE.B      #14,D0
         TRAP        #15
@@ -39,19 +47,18 @@ Search  *Loop through start and end memory locations. Counter param for starting
         MOVE.L      CurrentAddr,D4
         JSR         OutL
         JSR         JMPCHECK
-        ADDQ.L      #$0002,CurrentAddr
+        ADDQ.L      #$0001,CurrentAddr
         BRA         Search      
         
 End     *End of program 
         SIMHALT
-test
-        RTS 
         
 JMPCHECK
         MOVE.L      #0,D3
         MOVE.L      #0,D2
         MOVEA.L     CurrentAddr,A1
         MOVE.B      (A1)+,D2
+        ADDQ.L      #$0001,CurrentAddr
         ASL.W       #4,D2
         ASL.W       #4,D2
         MOVE.B      (A1),D3
@@ -77,7 +84,136 @@ JMPCHECK
         BEQ         fourchecker
         CMP.B       #$01,D3
         BEQ         moveb
+        CMP.B       #$06,D3
+        BEQ         branchcheck
         BRA         BADDATA
+        
+BADDATA
+        LEA         ENTER,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        RTS        
+        
+printsize        
+        MOVE.W      D4,D3
+        AND.W       #%0000000011000000,D3
+        CMP.W       #%0000000000000000,D3
+        BEQ         printb
+        CMP.W       #%0000000001000000,D3
+        BEQ         printw
+        LEA         PrintSizeL,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        MOVE.W      D4,D3
+        LEA         ENTER,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        RTS
+        
+printb
+        LEA         PrintSizeB,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        MOVE.W      D4,D3
+        LEA         ENTER,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        RTS
+printw
+        LEA         PrintSizeW,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        MOVE.W      D4,D3
+        LEA         ENTER,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        RTS
+        
+branchcheck
+        MOVE.W      D4,D3
+        AND.W       #$0F00,D3
+        CMP.W       #$0E00,D3
+        BEQ         bgt
+        CMP.W       #$0F00,D3
+        BEQ         ble
+        CMP.W       #$0000,D3
+        BEQ         bra
+        BRA         beq
+        
+bgt
+        LEA         PrintBGT,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        MOVE.W      D4,D3
+        BRA         displacementcheck         
+
+ble
+        LEA         PrintBLE,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        MOVE.W      D4,D3
+        BRA         displacementcheck
+
+bra
+        LEA         PrintBRA,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        MOVE.W      D4,D3
+        BRA         displacementcheck
+
+beq
+        LEA         Printbeq,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        MOVE.W      D4,D3
+        BRA         displacementcheck
+
+jsrdisp
+        MOVE.L      #0,D3
+        MOVE.L      #0,D2
+        ADDQ.L      #$0001,CurrentAddr
+        MOVEA.L     CurrentAddr,A1
+        MOVE.B      (A1)+,D2
+        ADDQ.L      #$0001,CurrentAddr
+        ASL.W       #4,D2
+        ASL.W       #4,D2
+        ASL.W       #4,D2
+        ASL.W       #4,D2
+        ASL.W       #4,D2
+        ASL.W       #4,D2
+        ASL.W       #4,D2
+        MOVE.B      (A1),D3
+        ADD.W       D2,D3
+        MOVE.L      D3,D4
+        BRA         OutL
+
+displacementcheck
+        MOVE.W      D4,D3
+        AND.W       #$00FF,D3
+        CMP.W       #$0000,D3
+        BGT         worddisp
+        MOVE.L      #0,D3
+        MOVE.L      #0,D2
+        ADDQ.L      #$0001,CurrentAddr
+        MOVEA.L     CurrentAddr,A1
+        MOVE.B      (A1)+,D2
+        ADDQ.L      #$0001,CurrentAddr
+        ASL.W       #4,D2
+        ASL.W       #4,D2
+        MOVE.B      (A1),D3
+        ADD.W       D2,D3
+        MOVE.L      D3,D4
+        ADD.L       CurrentAddr,D4
+        SUBQ.W      #$0001,D4
+        BRA         OutW
+        
+worddisp
+        AND.W       #$00FF,D4
+        NEG.B       D4
+        ADD.L       CurrentAddr,D4
+        NEG.B       D4
+        SUBQ.W      #$0001,D4
+        BRA         OutW   
         
 moveb
         LEA         PrintMOVEB,A1
@@ -148,17 +284,14 @@ not
         LEA         PrintNOT,A1
         MOVE.B      #14,D0
         TRAP        #15
-        MOVE.W      D4,D3
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS
+        BRA         printsize
         
 movem
         LEA         PrintMOVEM,A1
         MOVE.B      #14,D0
         TRAP        #15
         MOVE.W      D4,D3
+        *TODO: ADD SIZE CHECK AND PRINT
         LEA         ENTER,A1
         MOVE.B      #14,D0
         TRAP        #15
@@ -208,20 +341,14 @@ rightshift
         MOVE.B      #14,D0
         TRAP        #15
         MOVE.W      D4,D3
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS
+        BRA         printsize
         
 leftshift
         LEA         PrintL,A1
         MOVE.B      #14,D0
         TRAP        #15
         MOVE.W      D4,D3
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS
+        BRA         printsize
         
 addaadd
         MOVE.W      D4,D3
@@ -235,6 +362,7 @@ adda
         MOVE.B      #14,D0
         TRAP        #15
         MOVE.W      D4,D3
+        *TODO CHECK AND PRINT SIZE
         LEA         ENTER,A1
         MOVE.B      #14,D0
         TRAP        #15
@@ -243,18 +371,12 @@ add
         LEA         PrintADD,A1
         MOVE.B      #14,D0
         TRAP        #15
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS 
+        BRA         printsize 
 addq
         LEA         PrintADDQ,A1
         MOVE.B      #14,D0
         TRAP        #15
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS
+        BRA         printsize
 
 moveql
         LEA         PrintMOVEQL,A1
@@ -268,18 +390,12 @@ sub
         LEA         PrintSUB,A1
         MOVE.B      #14,D0
         TRAP        #15
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS
+        BRA         printsize
 or
         LEA         PrintOR,A1
         MOVE.B      #14,D0
         TRAP        #15
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS
+        BRA         printsize
 lea
         LEA         PrintLEA,A1
         MOVE.B      #14,D0
@@ -289,11 +405,6 @@ lea
         TRAP        #15
         RTS
         
-BADDATA
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS
         
 ReadL   *Reads word size hexa from keyboard input, bit shifting for byte size operations
         *param: D1 for trap tasks, D2 for calculations and final hexa
@@ -390,6 +501,50 @@ ReadL   *Reads word size hexa from keyboard input, bit shifting for byte size op
         MOVE.L      D6,D1
         ADD         D1,D2
         MOVE.L      D2,D3
+        RTS
+        
+OutW    *convert and output word size hexa from D4 to null terminated string for trap task #13 at $6000 to $6004
+        *param: D4 to contain word size in hex for conversion, D5 used for calculations/bitshifting
+        *output: outputs to terminal window ASCII conversion 
+        
+        *bit shift right 3 bytes to get first digit, place into $6000
+        MOVE.W      D4,D5 
+        ASR.W       #4,D5
+        ASR.W       #4,D5
+        ASR.W       #4,D5
+        MOVE.B      D5,D6
+        JSR         HtoA
+        MOVE.B      D6,$6000
+
+        *bit shift right 2 bytes and mask to get second digit, place into $6001
+        MOVE.W      D4,D5
+        ASR.W       #4,D5
+        ASR.W       #4,D5
+        AND.W       #$000F,D5
+        MOVE.B      D5,D6
+        JSR         HtoA
+        MOVE.B      D6,$6001
+        
+        *bit shift right 1 byte and mask to get third digit, place into $6002
+        MOVE.W      D4,D5
+        ASR.W       #4,D5
+        AND.W       #$000F,D5
+        MOVE.B      D5,D6
+        JSR         HtoA
+        MOVE.B      D6,$6002
+              
+        *mask to get 4th and final digit, place into $6003  
+        MOVE.W      D4,D5
+        AND.W       #$000F,D5
+        MOVE.B      D5,D6
+        JSR         HtoA
+        MOVE.B      D6,$6003
+        
+        *add null-terminator and call trap task #13 on $6000 terminated at $6004
+        MOVE.B      #$00,$6004
+        MOVE.W      #$6000,A1
+        MOVE.B      #13,D0
+        TRAP        #15
         RTS
         
 OutL    *convert and output word size hexa from D4 to null terminated string for trap task #13 at $6000 to $6004
@@ -536,9 +691,9 @@ StartMem        DS.L    1
 EndMem          DS.L    1
 CurrentAddr     DS.L    1
 ENTER           DC.B    CR,LF,0
-Print.W         DC.B    '.W ',0
-Print.B         DC.B    '.B ',0
-Print.L         DC.B    '.L ',0
+PrintSizeW          DC.B    '.W ',0
+PrintSizeB          DC.B    '.B ',0
+PrintSizeL          DC.B    '.L ',0
 PrintLEA        DC.B    'LEA',0
 PrintADDQ       DC.B    'ADDQ',0
 PrintMOVEQL     DC.B    'MOVEQ.L',0
@@ -557,9 +712,14 @@ PrintNOP        DC.B    'NOP',0
 PrintRTS        DC.B    'RTS',0
 PrintJSR        DC.B    'JSR',0
 PrintMOVEB      DC.B    'MOVE.B',0
+PrintBGT        DC.B    'BGT    ',0
+PrintBLE        DC.B    'BLE    ',0
+PrintBRA        DC.B    'BRA    ',0
+PrintBEQ        DC.B    'BEQ    ',0
 
 
     END    START        ; last line of source
+
 
 
 
