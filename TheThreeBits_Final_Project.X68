@@ -4,18 +4,16 @@
 * Date       :
 * Description:
 *-----------------------------------------------------------
+TEST_VALUE      EQU    $1202
+SRC_MODE        EQU    $1504
+SRC_REGISTER    EQU    $1508 
+DEST_MODE       EQU    $1512
+DEST_REGISTER   EQU    $1516  
+OP_SIZE         EQU    $1520  
+  
     ORG    $1000 
         
 START:  *Read starting memory location from user
-        SUB.B       D0,D0
-        SUB.W       D0,D0
-        SUB.L       D0,D0
-        OR.B       D0,D0
-        OR.W       D0,D0
-        OR.L       D0,D0
-        ADDQ.B       #1,D0
-        ADDQ.W       #1,D0
-        ADDQ.L       #1,D0
         LEA         Start1,A1
         MOVE.B      #14,D0
         TRAP        #15
@@ -47,7 +45,6 @@ Search  *Loop through start and end memory locations. Counter param for starting
         MOVE.L      CurrentAddr,D4
         JSR         OutL
         JSR         JMPCHECK
-        ADDQ.L      #$0001,CurrentAddr
         BRA         Search      
         
 End     *End of program 
@@ -89,10 +86,10 @@ JMPCHECK
         BRA         BADDATA
         
 BADDATA
-        LEA         ENTER,A1
+        LEA         PRINT_INVALIDDATA,A1
         MOVE.B      #14,D0
         TRAP        #15
-        RTS        
+        BRA         EACHECK        
         
 printsize        
         MOVE.W      D4,D3
@@ -104,29 +101,24 @@ printsize
         LEA         PrintSizeL,A1
         MOVE.B      #14,D0
         TRAP        #15
+        MOVE.B      #2,OP_SIZE
         MOVE.W      D4,D3
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
         RTS
         
 printb
         LEA         PrintSizeB,A1
         MOVE.B      #14,D0
         TRAP        #15
+        MOVE.B      #0,OP_SIZE
         MOVE.W      D4,D3
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
         RTS
+        
 printw
         LEA         PrintSizeW,A1
         MOVE.B      #14,D0
         TRAP        #15
+        MOVE.B      #1,OP_SIZE
         MOVE.W      D4,D3
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
         RTS
         
 branchcheck
@@ -219,11 +211,8 @@ moveb
         LEA         PrintMOVEB,A1
         MOVE.B      #14,D0
         TRAP        #15
-        MOVE.W      D4,D3
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS   
+        MOVE.B      #0,OP_SIZE
+        BRA         EAFILL   
         
 fourchecker
         MOVE.W      D4,D3
@@ -255,9 +244,6 @@ nop
         MOVE.B      #14,D0
         TRAP        #15
         MOVE.W      D4,D3
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
         RTS
         
 jsr
@@ -265,9 +251,6 @@ jsr
         MOVE.B      #14,D0
         TRAP        #15
         MOVE.W      D4,D3
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
         RTS
         
 rts
@@ -275,16 +258,14 @@ rts
         MOVE.B      #14,D0
         TRAP        #15
         MOVE.W      D4,D3
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
         RTS
 
 not
         LEA         PrintNOT,A1
         MOVE.B      #14,D0
         TRAP        #15
-        BRA         printsize
+        JSR         printsize
+        BRA         EAFILL
         
 movem
         LEA         PrintMOVEM,A1
@@ -295,7 +276,8 @@ movem
         LEA         ENTER,A1
         MOVE.B      #14,D0
         TRAP        #15
-        RTS
+        *TODO: UNIQUE EA FILL
+        BRA         EACHECK
         
 lsroas
         MOVE.W      D4,D3
@@ -341,14 +323,16 @@ rightshift
         MOVE.B      #14,D0
         TRAP        #15
         MOVE.W      D4,D3
-        BRA         printsize
+        JSR         printsize
+        BRA         EAFILL
         
 leftshift
         LEA         PrintL,A1
         MOVE.B      #14,D0
         TRAP        #15
         MOVE.W      D4,D3
-        BRA         printsize
+        JSR         printsize
+        BRA         EAFILL
         
 addaadd
         MOVE.W      D4,D3
@@ -363,29 +347,29 @@ adda
         TRAP        #15
         MOVE.W      D4,D3
         *TODO CHECK AND PRINT SIZE
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS
+        *TODO CUSTOM EA FILL
+        BRA         EACHECK
 add
         LEA         PrintADD,A1
         MOVE.B      #14,D0
         TRAP        #15
-        BRA         printsize 
+        JSR         printsize
+        *TODO CUSTOM EA FILL
+        BRA         EACHECK 
 addq
         LEA         PrintADDQ,A1
         MOVE.B      #14,D0
         TRAP        #15
-        BRA         printsize
+        JSR         printsize
+        *TODO CUSTOM EA FILL
+        BRA         EACHECK
 
 moveql
         LEA         PrintMOVEQL,A1
         MOVE.B      #14,D0
         TRAP        #15
-        LEA         ENTER,A1
-        MOVE.B      #14,D0
-        TRAP        #15
-        RTS
+        *TODO CUSTOM EA FILL
+        BRA         EACHECK
 sub
         LEA         PrintSUB,A1
         MOVE.B      #14,D0
@@ -395,15 +379,250 @@ or
         LEA         PrintOR,A1
         MOVE.B      #14,D0
         TRAP        #15
-        BRA         printsize
+        JSR         printsize
+        *TODO CUSTOM EA FILL
+        BRA         EACHECK
 lea
         LEA         PrintLEA,A1
         MOVE.B      #14,D0
-        TRAP        #15
+        TRAP        #15 
+        
+        *CUSTOM EA FILL
+        MOVE.W      #%001,DEST_MODE      
+        
+        MOVE.W      D4,D3
+        AND.W       #%0000111000000000,D3
+        ASR.L       #4,D3
+        ASR.L       #4,D3
+        ASR.L       #1,D3
+        MOVE.W      D3,DEST_REGISTER
+        
+        MOVE.W      D4,D3
+        AND.W       #%0000000000111000,D3
+        ASR.L       #3,D3
+        MOVE.W      D3,SRC_MODE
+        
+        MOVE.W      D4,D3
+        AND.W       #%0000000000000111,D3
+        MOVE.W      D3,SRC_REGISTER
+        
+        BRA         EACHECK
+        
+EACHECK 
+        * EA code start
+        MOVE.W      SRC_MODE,D1      *decode and print source EA   
+        MOVE.W      SRC_REGISTER,D2
+        JSR         DECODE_EA   
+        
+        LEA         PRINT_COMMA,A1   *print comma 
+        MOVE.B      #14,D0                     
+        TRAP        #15 
+   
+        MOVE.W      DEST_MODE,D1    *decode and print destination EA
+        MOVE.W      DEST_REGISTER,D2
+        JSR         DECODE_EA
+        
         LEA         ENTER,A1
         MOVE.B      #14,D0
         TRAP        #15
+        
+        RTS 
+        
+EAFILL
+        MOVE.W      D4,D3
+        AND.W       #%0000000111000000,D3
+        ASR.L       #4,D3
+        ASR.L       #2,D3
+        MOVE.W      D3,DEST_MODE      
+        
+        MOVE.W      D4,D3
+        AND.W       #%0000111000000000,D3
+        ASR.L       #4,D3
+        ASR.L       #4,D3
+        ASR.L       #1,D3
+        MOVE.W      D3,DEST_REGISTER
+        
+        MOVE.W      D4,D3
+        AND.W       #%0000000000111000,D3
+        ASR.L       #3,D3
+        MOVE.W      D3,SRC_MODE
+        
+        MOVE.W      D4,D3
+        AND.W       #%0000000000000111,D3
+        MOVE.W      D3,SRC_REGISTER
+        MOVE.W      D4,D5
+        CLR         D4
+        
+        BRA         EACHECK
+        
+DECODE_EA 
+        LEA         EAMODE_TABLE,A3 *load EA mode juno table to A3
+        LEA         HEX_CHAR,A4
+        MULU        #6,D1  
+        JSR         0(A3,D1)
         RTS
+    
+EAMODE_TABLE
+        JMP         MODE_000
+        JMP         MODE_001
+        JMP         MODE_010
+        JMP         MODE_011
+        JMP         MODE_100
+        JMP         MODE_101
+        JMP         MODE_110
+        JMP         MODE_111
+    
+*Data register mode
+MODE_000
+        MOVE.L      #26,D4
+        LEA         0(A4,D4),A1
+        MOVE.B      #14,D0
+        TRAP        #15     *Print 'D' using HEX_CHAR table        
+        MULU        #2,D2
+        LEA         0(A4,D2),A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        RTS
+    
+*Address register mode
+MODE_001
+        MOVE.L      #20,D4
+        LEA         0(A4,D4),A1
+        MOVE.B      #14,D0
+        TRAP        #15      *Print 'A' using HEX_CHAR table
+    
+        MULU        #2,D2
+        LEA         0(A4,D2),A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        RTS
+
+*Indirect Address register mode
+MODE_010
+        LEA         PRINT_LPAREN,A1
+        MOVE.B      #14,D0    
+        TRAP        #15    
+        JSR         Mode_001
+        LEA         PRINT_RPAREN,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        RTS
+
+*Address register with post-increment
+MODE_011
+        JSR         MODE_010
+        LEA         PRINT_PLUS,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        RTS
+    
+*Address register with post-increment
+MODE_100
+        LEA         PRINT_MINUS,A1
+        MOVE.B      #14,D0
+        TRAP        #15
+        JSR         MODE_010
+        RTS
+
+MODE_101
+        JMP         INVALID
+        
+MODE_110
+        JMP         INVALID
+    
+MODE_111    
+        MOVEA.L     A2,A3
+        CMP.B       #%000,D2
+        BEQ         ABS_Short     
+        CMP.B       #%001,D2
+        BEQ         ABS_Long      
+        CMP.B       #%100,D2
+        BEQ         IMMEDIATE       
+        BRA         INVALID
+
+
+*Absolute long mode
+ABS_LONG  
+        LEA     PRINT_OCTOTH,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        *TODO PRINT LONG DATA
+        ADDQ.L  #$0005,CurrentAddr
+        RTS
+          
+*Absolute short mode
+ABS_SHORT
+        LEA     PRINT_DOLLAR,A1
+        MOVE.B  #14,D0
+        TRAP    #15
+        ADDA.W  #2,A3                
+        MOVE.W  (A3),D6      
+        MOVE.L  #4,D5              
+        JSR     PRINT_HEX
+        ADDA.W  #2,A2
+        ADDQ.L  #$0003,CurrentAddr
+        RTS
+        
+*Immediate short mode
+IMMEDIATE       
+        LEA     PRINT_OCTOTH,A1  
+        MOVE.B  #14,D0
+        TRAP    #15   
+        LEA     PRINT_DOLLAR,A1                     
+        MOVE.B  #14,D0                
+        TRAP    #15
+        CLR.L   D3                
+        MOVE.B  OP_SIZE,D3          
+        CMP.B   #1,D3        
+        BGT     IMMED_L                                
+        ADDA.W  #2, A3
+        CLR.L   D6
+        MOVE.W  (A3),D6                
+        MOVE.L  #4,D5        *4 characters to display       
+        JSR     PRINT_HEX
+        ADDA.W  #2,A2 
+        ADDQ.L  #$0004,CurrentAddr
+        RTS
+
+IMMED_L      
+        ADDA.W  #2,A3
+        CLR.L   D6                
+        MOVE.L  (A3),D6                
+        MOVE.L  #8,D5               *8 characters to display
+        JSR     PRINT_HEX                
+        ADDA.W  #4,A2 
+        RTS 
+                
+PRINT_HEX       
+        MOVEM.L D2-D5,-(SP)                                        
+        LEA     HEX_CHAR,A3
+        MULU.W  #4,D5              
+        MOVE.L  #32,D2              *set the total number of bits                
+        SUB.L   D5,D2                              
+        MOVE.L  #28,D3              
+LOOP         
+        MOVE.L  D6,D4               *display one char per iteraiton               
+        LSL.L   D2,D4               
+        LSR.L   D3,D4               
+        MULU    #2,D4               *find location character in char_table
+        LEA     0(A3,D4),A1                        
+        MOVE.B  #14,D0                             
+        TRAP    #15                 
+                
+        ADD.B   #4,D2               *add 4 to displacement to get next nibble
+        CMP.B   #32,D2                        
+        BNE     LOOP
+        MOVEM.L (SP)+,D2-D5         
+        RTS
+
+**
+*Invalid EA mode. Jump to "prompt uset to input" when merging
+**
+INVALID 
+    LEA     PRINT_INVALIDEA,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    RTS
         
         
 ReadL   *Reads word size hexa from keyboard input, bit shifting for byte size operations
@@ -681,7 +900,34 @@ ALPHA   CMPI.B      #$41,D6
         BGT.B       ERR
         SUBI.B      #$37,D6
         RTS
+        
+HEX_CHAR     
+    DC.B    '0',0
+    DC.B    '1',0
+    DC.B    '2',0
+    DC.B    '3',0    
+    DC.B    '4',0    
+    DC.B    '5',0
+    DC.B    '6',0
+    DC.B    '7',0
+    DC.B    '8',0
+    DC.B    '9',0
+    DC.B    'A',0
+    DC.B    'B',0
+    DC.B    'C',0
+    DC.B    'D',0
+    DC.B    'E',0
+    DC.B    'F',0
 
+PRINT_LPAREN    DC.B    '(',0
+PRINT_RPAREN    DC.B    ')',0
+PRINT_MINUS     DC.B    '-',0
+PRINT_PLUS      DC.B    '+',0
+PRINT_DOLLAR    DC.B   '$',0
+PRINT_OCTOTH    DC.B    '#',0
+PRINT_COMMA     DC.B    ',',0
+PRINT_INVALIDEA DC.B    'Invalid EA ',0
+PRINT_INVALIDDATA   DC.B    'Invalid Instruction    ',0
 CR              EQU         $0D
 LF              EQU         $0A
 ERROR           DC.L    ' ERROR INVALID INPUT ',CR,0
@@ -691,12 +937,12 @@ StartMem        DS.L    1
 EndMem          DS.L    1
 CurrentAddr     DS.L    1
 ENTER           DC.B    CR,LF,0
-PrintSizeW          DC.B    '.W ',0
-PrintSizeB          DC.B    '.B ',0
-PrintSizeL          DC.B    '.L ',0
-PrintLEA        DC.B    'LEA',0
+PrintSizeW      DC.B    '.W    ',0
+PrintSizeB      DC.B    '.B    ',0
+PrintSizeL      DC.B    '.L    ',0
+PrintLEA        DC.B    'LEA   ',0
 PrintADDQ       DC.B    'ADDQ',0
-PrintMOVEQL     DC.B    'MOVEQ.L',0
+PrintMOVEQL     DC.B    'MOVEQ.L    ',0
 PrintSUB        DC.B    'SUB',0
 PrintOR         DC.B    'OR',0
 PrintADDA       DC.B    'ADDA',0
@@ -708,10 +954,10 @@ PrintR          DC.B    'R',0
 PrintL          DC.B    'L',0
 PrintNOT        DC.B    'NOT',0
 PrintMOVEM      DC.B    'MOVEM',0
-PrintNOP        DC.B    'NOP',0
-PrintRTS        DC.B    'RTS',0
-PrintJSR        DC.B    'JSR',0
-PrintMOVEB      DC.B    'MOVE.B',0
+PrintNOP        DC.B    'NOP    ',0
+PrintRTS        DC.B    'RTS    ',0
+PrintJSR        DC.B    'JSR    ',0
+PrintMOVEB      DC.B    'MOVE.B    ',0
 PrintBGT        DC.B    'BGT    ',0
 PrintBLE        DC.B    'BLE    ',0
 PrintBRA        DC.B    'BRA    ',0
@@ -719,6 +965,7 @@ PrintBEQ        DC.B    'BEQ    ',0
 
 
     END    START        ; last line of source
+
 
 
 
