@@ -190,6 +190,79 @@ DEHELP  MOVE.W  D7,D5
         LSR.W   D4,D5
         MULU
         
+GETSIZE MOVE.W  D7,D5
+        LSR.W   #6,D6
+        ANDI.W  #$0003,D6
+        RTS
+        
+SIZEBUF JSR     GETSIZE
+        CMP.B   #%00,D5
+        BEQ     ENDB
+        CMP.B   #%01,D5
+        BEQ     ENDW
+        CMP.B   #%10,D5
+        BNE     BADINS
+        MOVE.B  #'L',(A2)+
+        JMP     ENDBUF
+ 
+ENDB    MOVE.B  #'B',(A2)+  
+        JMP     ENDBUF
+        
+ENDW    MOVE.B  #'W',(A2)+
+
+ENDBUF  RTS
+
+REGBIT  MOVE.W  D7,D5
+        LSR.L   8,D5    
+        LSR.L   #$7,D5
+        ADD.B   #$30,D5
+        MOVE.B  D6,(A2)+
+        RTS
+        
+DIRBIT  MOVE.W  D7,D5
+        LSR.L   8,D6
+        ANDI.B  #01,D6
+        RTS
+
+ADDR    CMP.B   #$00,D5
+        BEQ     BYTOBU
+        CMPI.B  #$3,D5
+        BEQ     
+
+BYTOBU  MOVE.B  #'$',(A2)+
+        CLR.L   D4
+        MOVE.W  (A0),D2
+        CLR.L   D4
+        MOVE.B  #2,D4
+
+BLOOP   CMP.B   #$00,D4
+        BEQ     
+
+LOOPHELP 
+        MOVE.W  D7,D5
+        ADDQ.W  #2,A0
+        RTS
+      
+WORD2BUF
+        MOVE.B  #'$',(A2)+
+        CLR.L   D4          
+        MOVE.L  (A0),D2       
+        CLR.L   D4          
+        MOVE.B  8,D4                  
+      
+WLOOP   CMP.B   #$00,D4     
+        BEQ     WLOOPHELP      
+        ROL.L   #4,D2       
+        MOVE.W  D2,D5       
+        ANDI.W  #$000F,D5      
+        JSR     HtoA              
+        SUBQ.B  #$1,D4      
+        JMP     WLOOP     
+  
+WLOOPHELP
+        MOVE.W  D7,D5
+        ADDQ.W  4,A0
+        RTS
         
 GETVAL  JSR         VAL1
         MOVE.B      12,D4   
@@ -231,8 +304,39 @@ VAL4    LSR.L   D4,D5
         JSR     HtoA
         JSR     VAL3
         RTS
-        
-        
+
+BADINS  MOVE.B  0, D5
+        MOVEA.L A3,A2               
+        MOVE.B  #'D',(A2)+       
+        MOVE.B  #'A',(A2)+
+        MOVE.B  #'T',(A2)+
+        MOVE.B  #'A',(A2)+
+        MOVE.B  #$09,(A2)+
+        MOVE.B  #'$',(A2)+         
+        JSR     getBad
+        RTS
+
+GETBAD  MOVEQ   #$0,D5             
+        MOVE.W  D7,D5               
+        MOVE.B  12,D4         
+        LSR.L   D4,D5               
+        ANDI.W  #$000F,D5          
+        JSR     HtoA           
+        MOVE.W  D7,D5
+        MOVE.B  8,D4
+        LSR.L   D4,D5
+        ANDI.W  #$000F,D5
+        JSR     HtoA           
+        MOVE.W  D7,D5
+        MOVE.B  4,D4
+        LSR.L   D4,D5
+        ANDI.W  #$000F,D5
+        JSR     HtoA           
+        MOVE.W  D7,D5
+        ANDI.W  #$000F,D5
+        JSR     HtoA           
+        RTS
+      
 
 CLEAR   CLR         D0
         CLR         D1
@@ -268,7 +372,6 @@ ENTER       DC.B    CR,LF,0
     END    START        ; last line of source
 
 
-*~Font name~Courier New~
-*~Font size~10~
-*~Tab type~1~
-*~Tab size~4~
+
+
+
